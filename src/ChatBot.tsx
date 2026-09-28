@@ -7,6 +7,7 @@ type ChatMessage = {
   role: 'user' | 'assistant';
   text: string;
   memories?: string[];
+  suggestions?: string[];
 };
 
 const STORAGE_KEY = 'campaignmind:chat-history';
@@ -103,6 +104,7 @@ export default function ChatBot() {
           role: 'assistant',
           text: response.reply,
           memories: response.memories,
+          suggestions: response.suggestions,
         },
       ]);
     } catch (cause) {
@@ -219,6 +221,20 @@ export default function ChatBot() {
                               <li key={`${memory}-${index}`}>• {memory}</li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+                      {message.suggestions && message.suggestions.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {message.suggestions.slice(0, 3).map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              onClick={() => submitMessage(suggestion)}
+                              className="rounded-full border border-[#dce6d9] bg-[#fbfcfa] px-3 py-1 text-[11px] font-semibold text-[#38594b] hover:border-[#b8ce8d] hover:bg-[#f6faef]"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>

@@ -67,6 +67,37 @@ Expected normalized frontend response:
 
 The adapter in `src/api/n8n.ts` is intentionally the only place that knows webhook URLs. If the n8n response uses different names, add normalization there rather than changing components.
 
+## Respond to Webhook (required)
+
+The UI only receives the HTTP body from **Respond to Webhook**, not the data shown in the n8n execution panel.
+
+For **ERAYA - Influencer Matching**:
+
+1. Webhook node → Respond: **Using Respond to Webhook Node**
+2. Respond to Webhook → Respond With: **JSON**
+3. Response Body must be the creator payload, not a chat `reply` field:
+
+```
+={{ JSON.stringify($json) }}
+```
+
+Do **not** use this (it returns `{"reply":"="}` to the app):
+
+```
+{
+  "reply": "={{ $json.reply }}"
+}
+```
+
+The live `ERAYA - Influencer Matching` webhook was checked on 2026-09-29 and
+returned `{"reply":"=[object Object]"}`. This means the Respond node is
+coercing an object inside a `reply` string. Return the full creator payload
+with the `JSON.stringify($json)` expression above, then publish the workflow.
+The frontend accepts the resulting JSON object and now shows a specific
+configuration error if the invalid wrapper appears again.
+
+The frontend expects `campaign_id` plus `recommendations[]` with `name`, `platform`, `source_url` / `creator_id`, `match_score`, and `reasons`.
+
 ## Environment variables
 
 See `.env.example`. Production webhook URLs must be supplied through environment variables and must not be committed.

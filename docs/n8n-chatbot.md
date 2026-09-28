@@ -26,11 +26,19 @@ AI Agent
 Respond to Webhook
 ```
 
+Keep the original user message when calling Hindsight. If the HTTP Request node replaces `$json`, the AI Agent will see an empty chat and reply as if no question was asked. Merge the webhook item with the Hindsight result, or put the Hindsight response in a field such as `memory`.
+
+The AI Agent prompt / text must use `{{ $json.chatInput }}` (or `$('Webhook').item.json.chatInput`). Simple Memory should use `{{ $json.sessionId }}`.
+
 The frontend sends:
 
 ```json
 {
   "message": "Which influencers fit my current campaign?",
+  "chatInput": "Which influencers fit my current campaign?",
+  "query": "Which influencers fit my current campaign? Campaign context: ...",
+  "text": "Which influencers fit my current campaign?",
+  "sessionId": "browser-session-id",
   "conversation_id": "browser-session-id",
   "campaign": {
     "product": "protein powder",
@@ -54,9 +62,11 @@ Use the incoming message and campaign context. For example:
 
 ```json
 {
-  "query": "{{$json.body.message}} Campaign context: {{$json.body.campaign.product}}, {{$json.body.campaign.category}}, target {{$json.body.campaign.target_audience}} in {{$json.body.campaign.location}} on {{$json.body.campaign.platform}}."
+  "query": "{{ $json.query || $json.chatInput || $json.message }}"
 }
 ```
+
+If the HTTP Request to Hindsight replaces the item, add a Merge (or Set) node so `chatInput` and `sessionId` still exist when the AI Agent runs.
 
 For the AI Agent, instruct it to:
 - answer the user's question using recalled Hindsight context;
