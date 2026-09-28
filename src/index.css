@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #202b27;
+  background: #f7f8f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+@layer components {
+  .panel { @apply rounded-2xl border border-[#dfe6df] bg-white shadow-[0_14px_38px_rgba(34,50,43,0.05)]; }
+  .eyebrow { @apply text-[10px] font-bold uppercase tracking-[0.16em] text-[#73817a]; }
+  .field-label { @apply mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#526159]; }
+}
