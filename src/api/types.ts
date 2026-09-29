@@ -40,6 +40,9 @@ export interface CreatorContact {
   email: string;
   sourceUrl?: string | null;
   sourceType?: string | null;
+  confidence?: string | null;
+  subject?: string | null;
+  body?: string | null;
 }
 
 export type ContactDiscoveryStatus =
@@ -51,6 +54,7 @@ export type ContactDiscoveryStatus =
 export interface CreatorRecommendation {
   creator_id: string;
   name: string;
+  username?: string | null;
   email?: string | null;
   profile_image_url?: string;
   outreach_status?:
@@ -81,6 +85,8 @@ export interface CreatorRecommendation {
 export interface SelectedCreator {
   creator_id: string;
   name: string;
+  username?: string | null;
+  profile_url?: string | null;
   platform: string;
   source_url: string;
   followers?: number | null;

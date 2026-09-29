@@ -17,7 +17,7 @@ const config = {
   recommendations: env.VITE_N8N_RECOMMENDATIONS_WEBHOOK,
   memory: env.VITE_N8N_MEMORY_WEBHOOK,
   outreach: env.VITE_N8N_OUTREACH_WEBHOOK,
-  creatorContact: env.VITE_N8N_CREATOR_CONTACT_WEBHOOK_URL,
+  creatorContact: env.VITE_N8N_CREATOR_CONTACT_WEBHOOK,
   chat:
     env.VITE_N8N_CHAT_WEBHOOK ||
     env.VITE_CHAT_WEBHOOK_URL ||
@@ -75,7 +75,12 @@ function asStringArray(value: unknown): string[] {
 }
 
 function isDemoEmail(email: string): boolean {
-  return email.toLowerCase().includes('demo.campaignmind.local');
+  const normalized = email.toLowerCase();
+  return (
+    normalized.includes('demo.campaignmind.local') ||
+    normalized.includes('fake@example') ||
+    normalized.endsWith('.local')
+  );
 }
 
 function asEmail(value: unknown): string | null {
@@ -301,6 +306,9 @@ export function toSelectedCreator(
   return {
     creator_id: sourceUrl,
     name: creator.name,
+    username: 'username' in creator ? creator.username ?? null : null,
+    profile_url:
+      'profile_url' in creator ? creator.profile_url ?? null : sourceUrl,
     platform: creator.platform,
     source_url: sourceUrl,
     followers: creator.followers ?? null,
@@ -334,6 +342,7 @@ function normalizeRecommendation(raw: unknown): CreatorRecommendation | null {
   return {
     creator_id: sourceUrl || name,
     name,
+    username: asString(record.username) || asString(record.handle) || null,
     platform,
     profile_url: asString(record.profile_url) || sourceUrl || null,
     source_url: sourceUrl || null,
@@ -417,7 +426,7 @@ function pickContactFromUnknown(data: unknown): CreatorContactResult {
     record.status === 'not_found' ||
     record.status === 'no_email';
 
-  if (email) {
+  if (email && foundFlag) {
     return {
       found: true,
       contact: {
@@ -425,13 +434,21 @@ function pickContactFromUnknown(data: unknown): CreatorContactResult {
         sourceUrl:
           asString(contactRecord.sourceUrl) ||
           asString(contactRecord.source_url) ||
+          asString(contactRecord.email_source_url) ||
           asString(record.source_url) ||
+          asString(record.email_source_url) ||
           null,
         sourceType:
           asString(contactRecord.sourceType) ||
           asString(contactRecord.source_type) ||
+          asString(contactRecord.email_source_type) ||
           asString(record.source_type) ||
+          asString(record.email_source_type) ||
           null,
+        confidence:
+          asString(contactRecord.confidence) || asString(record.confidence) || null,
+        subject: asString(contactRecord.subject) || asString(record.subject) || null,
+        body: asString(contactRecord.body) || asString(record.body) || null,
       },
       message: asString(record.message),
     };
@@ -461,28 +478,29 @@ function pickContactFromUnknown(data: unknown): CreatorContactResult {
 }
 
 function isOutreachSuccess(data: unknown): boolean {
-  if (!isRecord(data)) {
+  const payload = unwrapPayload(data);
+  if (!isRecord(payload)) {
     return false;
   }
 
-  if (data.success === false || data.ok === false) {
+  if (payload.success === false || payload.ok === false) {
     return false;
   }
 
-  const status = asString(data.status)?.toLowerCase();
+  const status = asString(payload.status)?.toLowerCase();
   if (status === 'error' || status === 'failed' || status === 'failure') {
     return false;
   }
 
-  if (typeof data.error === 'string' && data.error.trim()) {
+  if (typeof payload.error === 'string' && payload.error.trim()) {
     return false;
   }
 
-  if (data.success === true || data.ok === true) {
+  if (payload.success === true || payload.ok === true) {
     return true;
   }
 
-  const successStatus = asString(data.status)?.toLowerCase();
+  const successStatus = asString(payload.status)?.toLowerCase();
   if (
     successStatus === 'sent' ||
     successStatus === 'success' ||
@@ -491,14 +509,15 @@ function isOutreachSuccess(data: unknown): boolean {
     return true;
   }
 
-  const message = asString(data.message)?.toLowerCase() || '';
+  const message = asString(payload.message)?.toLowerCase() || '';
   return /email|message/.test(message) && /sent|success|delivered/.test(message);
 }
 
 async function post<TResponse>(
   url: string | undefined,
   payload: unknown,
-  timeoutMs = 180_000
+  timeoutMs = 180_000,
+  onResponse?: (response: Response, responseData: unknown) => void
 ): Promise<TResponse> {
   if (!url) {
     throw new N8nApiError('The n8n webhook is not configured yet.');
@@ -525,6 +544,8 @@ async function post<TResponse>(
         parsed = { raw: text };
       }
     }
+
+    onResponse?.(response, parsed);
 
     if (!response.ok) {
       throw new N8nApiError(
@@ -574,30 +595,56 @@ export async function findCreatorContact(
   creator: SelectedCreator,
   campaign: CampaignRequest | CampaignBrief
 ): Promise<CreatorContactResult> {
-  const brief: CampaignBrief =
-    'product_name' in campaign ? campaign : toCampaignBrief(campaign);
+  const webhookUrl = import.meta.env.VITE_N8N_CREATOR_CONTACT_WEBHOOK;
+  const payload = {
+    creator: {
+      name: creator.name,
+      username: creator.username,
+      platform: creator.platform,
+      profile_url: creator.source_url || creator.profile_url || creator.creator_id,
+    },
+    campaign:
+      'product_name' in campaign
+        ? {
+            product_name: campaign.product_name,
+            category: campaign.category,
+            product_description: '',
+            target_audience: campaign.target_audience,
+            location: campaign.location,
+            budget: Number(campaign.budget) || 0,
+            goal: campaign.goal,
+            platform: campaign.preferred_platform,
+          }
+        : {
+            product_name: campaign.product,
+            category: campaign.category,
+            product_description: campaign.description,
+            target_audience: campaign.target_audience,
+            location: campaign.location,
+            budget: campaign.budget,
+            goal: campaign.goal,
+            platform: campaign.platform || 'Instagram',
+          },
+  };
+
+  console.log('[CONTACT] Calling webhook', webhookUrl);
+  console.log('[CONTACT] Payload', payload);
 
   try {
     const data = await post<unknown>(
-      config.creatorContact,
-      {
-        creator: {
-          creator_id: creator.creator_id,
-          name: creator.name,
-          platform: creator.platform,
-          source_url: creator.source_url,
-          followers: creator.followers ?? null,
-          location: creator.location ?? null,
-        },
-        campaign: brief,
-      },
-      90_000
+      webhookUrl,
+      payload,
+      90_000,
+      (response, responseData) => {
+        console.log('[CONTACT] Status', response.status);
+        console.log('[CONTACT] Response', responseData);
+      }
     );
 
-    const payload = unwrapPayload(data);
+    const responsePayload = unwrapPayload(data);
 
-    if (isRecord(payload)) {
-      const errorText = asString(payload.error);
+    if (isRecord(responsePayload)) {
+      const errorText = asString(responsePayload.error);
       if (errorText && !/not found|no email|no public/i.test(errorText)) {
         throw new N8nApiError(errorText, 502);
       }
@@ -623,9 +670,6 @@ export async function findCreatorContact(
 }
 
 export interface OutreachRequest {
-  campaign_id?: string;
-  creator_id: string;
-  creator_name: string;
   creator_email: string;
   subject: string;
   body: string;
@@ -648,19 +692,22 @@ export async function sendOutreach(
   }
 
   const data = await post<unknown>(config.outreach, {
-    ...payload,
-    to: payload.creator_email,
+    creator_email: payload.creator_email,
+    subject: payload.subject,
+    body: payload.body,
   });
 
   if (!isOutreachSuccess(data)) {
-    const record = isRecord(data) ? data : {};
+    const responsePayload = unwrapPayload(data);
+    const record = isRecord(responsePayload) ? responsePayload : {};
     throw new N8nApiError(
       asString(record.message) || asString(record.error) || 'Email failed to send.',
       502
     );
   }
 
-  const record = isRecord(data) ? data : {};
+  const responsePayload = unwrapPayload(data);
+  const record = isRecord(responsePayload) ? responsePayload : {};
 
   return {
     success: true,

@@ -207,9 +207,12 @@ function loadSelectedCreators(): SelectedCreator[] {
 }
 
 function isDemoCreatorEmail(email: unknown): boolean {
+  if (typeof email !== 'string') return false;
+  const normalized = email.toLowerCase();
   return (
-    typeof email === 'string' &&
-    email.toLowerCase().includes('demo.campaignmind.local')
+    normalized.includes('demo.campaignmind.local') ||
+    normalized.includes('fake@example') ||
+    normalized.endsWith('.local')
   );
 }
 
@@ -2897,15 +2900,18 @@ function RecommendationResults({
   const storedCampaign = sessionStorage.getItem(
     'campaignmind:campaign-form'
   );
+  const activeCampaignForm = getActiveCampaign()?.form ?? null;
 
-  let campaignDetails: CampaignRequest | null = null;
+  let campaignDetails: CampaignRequest | null = activeCampaignForm;
 
-  try {
-    campaignDetails = storedCampaign
-      ? (JSON.parse(storedCampaign) as CampaignRequest)
-      : null;
-  } catch {
-    campaignDetails = null;
+  if (!campaignDetails) {
+    try {
+      campaignDetails = storedCampaign
+        ? (JSON.parse(storedCampaign) as CampaignRequest)
+        : null;
+    } catch {
+      campaignDetails = null;
+    }
   }
 
 
@@ -3238,10 +3244,10 @@ function CreatorCard({
     .replace(/\(.*?\)/g, '')
     .trim() || creator.name;
 
-  const outreachSubject =
+  const defaultOutreachSubject =
     `Collaboration opportunity — ${campaignDetails?.product || 'campaign'}`;
 
-  const outreachBody = [
+  const defaultOutreachBody = [
     `Hi ${creatorDisplayName},`,
     '',
     `We would like to explore a collaboration on ${creator.platform} for ${campaignDetails?.product || 'our product'}${campaignDetails?.category ? ` (${campaignDetails.category})` : ''}.`,
@@ -3260,6 +3266,13 @@ function CreatorCard({
     return lines[index - 1] !== '';
   }).join('\n');
 
+  const [outreachSubject, setOutreachSubject] = useState(
+    selectedCreator?.contact?.subject || defaultOutreachSubject
+  );
+  const [outreachBody, setOutreachBody] = useState(
+    selectedCreator?.contact?.body || defaultOutreachBody
+  );
+
   async function discoverContact() {
     if (!campaignDetails) {
       setContactError('Save the campaign brief before searching for a contact.');
@@ -3275,6 +3288,8 @@ function CreatorCard({
       const result = await findCreatorContact(current, campaignDetails);
 
       if (result.found && result.contact?.email) {
+        setOutreachSubject(result.contact.subject || defaultOutreachSubject);
+        setOutreachBody(result.contact.body || defaultOutreachBody);
         onSelectedCreatorUpdate({
           ...current,
           contact: result.contact,
@@ -3458,7 +3473,7 @@ function CreatorCard({
 
             {outreachSent ? (
               <span className="rounded-full bg-[#e7f3df] px-3 py-1.5 text-xs font-bold text-[#4f7630]">
-                Email sent
+                Email sent successfully
               </span>
             ) : (
               <button
@@ -3498,12 +3513,12 @@ function CreatorCard({
               disabled={contactLoading}
               className="mt-3 rounded-lg bg-[#41623f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#355532] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {contactLoading ? 'Searching for public contact...' : 'Find public contact'}
+              {contactLoading ? 'Finding public contact...' : 'Find public contact'}
             </button>
 
             {contactLoading && (
               <p className="mt-3 text-xs text-[#66804e]">
-                Searching public sources for a business email...
+                Finding a public business email...
               </p>
             )}
 
@@ -3515,19 +3530,48 @@ function CreatorCard({
                 <p className="mt-1 text-sm font-semibold text-[#29463b]">
                   {contactEmail}
                 </p>
-                {selectedCreator?.contact?.sourceUrl && (
-                  <p className="mt-1 break-all text-[11px] text-[#6f7d75]">
-                    Source: {selectedCreator.contact.sourceUrl}
-                  </p>
-                )}
                 {selectedCreator?.contact?.sourceType && (
-                  <p className="mt-0.5 text-[11px] text-[#6f7d75]">
+                  <p className="mt-1 text-[11px] text-[#6f7d75]">
                     Source type: {selectedCreator.contact.sourceType}
                   </p>
                 )}
-                <p className="mt-1 break-all text-[11px] text-[#6f7d75]">
-                  Profile: {sourceUrl}
-                </p>
+                {selectedCreator?.contact?.confidence && (
+                  <p className="mt-1 text-[11px] text-[#6f7d75]">
+                    Confidence: {selectedCreator.contact.confidence}
+                  </p>
+                )}
+                {selectedCreator?.contact?.sourceUrl && (
+                  <p className="mt-1 break-all text-[11px] text-[#6f7d75]">
+                    <a
+                      href={selectedCreator.contact.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-[#41623f] underline"
+                    >
+                      View source
+                    </a>
+                  </p>
+                )}
+                {selectedCreator?.contact?.subject && (
+                  <div className="mt-3 border-t border-[#edf0eb] pt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#89958e]">
+                      AI subject
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-[#29463b]">
+                      {selectedCreator.contact.subject}
+                    </p>
+                  </div>
+                )}
+                {selectedCreator?.contact?.body && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#89958e]">
+                      AI email body
+                    </p>
+                    <p className="mt-1 whitespace-pre-line text-xs leading-5 text-[#5d6e65]">
+                      {selectedCreator.contact.body}
+                    </p>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -3543,7 +3587,7 @@ function CreatorCard({
 
             {!contactLoading && contactStatus === 'not_found' && (
               <div className="mt-3 rounded-lg border border-[#ead9a9] bg-[#fff9e8] p-3 text-xs leading-5 text-[#92712d]">
-                No public business email found. We won't send outreach without a verified/public contact.
+                No public business/professional email found.
               </div>
             )}
 
@@ -3752,13 +3796,19 @@ function CreatorCard({
               Subject
             </p>
 
-            <p className="mt-1 text-sm font-semibold text-[#29463b]">
-              {outreachSubject}
-            </p>
+            <input
+              type="text"
+              value={outreachSubject}
+              onChange={(event) => setOutreachSubject(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#d8e1d7] px-3 py-2 text-sm font-semibold text-[#29463b] outline-none focus:border-[#6f943b]"
+            />
 
-            <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[#5d6e65]">
-              {outreachBody}
-            </p>
+            <textarea
+              value={outreachBody}
+              onChange={(event) => setOutreachBody(event.target.value)}
+              rows={10}
+              className="mt-1 w-full resize-y rounded-lg border border-[#d8e1d7] px-3 py-3 text-sm leading-6 text-[#5d6e65] outline-none focus:border-[#6f943b]"
+            />
 
           </div>
 
@@ -3793,8 +3843,6 @@ function CreatorCard({
                   setOutreachError('');
 
                   const response = await sendOutreach({
-                    creator_id: creator.creator_id,
-                    creator_name: creator.name,
                     creator_email: contactEmail,
                     subject: outreachSubject,
                     body: outreachBody,
@@ -3832,7 +3880,7 @@ function CreatorCard({
               disabled={outreachSending || !contactEmail}
               className="rounded-lg bg-[#41623f] px-4 py-2 text-xs font-semibold text-white hover:bg-[#355532] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {outreachSending ? 'Sending...' : outreachError ? 'Retry send' : 'Send email'}
+              {outreachSending ? 'Sending...' : outreachError ? 'Retry send' : 'Send mail'}
             </button>
 
           </div>
@@ -4284,7 +4332,7 @@ function Outreach() {
                         </p>
 
                         <p className="mt-1 text-sm font-semibold text-[#4f7630]">
-                          ✓ Email sent
+                          ✓ Email sent successfully
                         </p>
                       </div>
 
