@@ -5,19 +5,44 @@
 
 :root {
   font-family: 'DM Sans', sans-serif;
-  color: #202b27;
-  background: #f7f8f4;
+  color: #20394b;
+  background: #f4f5f7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
+body { margin: 0; min-width: 320px; overflow-x: hidden; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(143, 179, 153, 0.7); outline-offset: 2px; }
 
 @layer components {
-  .panel { @apply rounded-2xl border border-[#dfe6df] bg-white shadow-[0_14px_38px_rgba(34,50,43,0.05)]; }
-  .eyebrow { @apply text-[10px] font-bold uppercase tracking-[0.16em] text-[#73817a]; }
-  .field-label { @apply mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#526159]; }
+  .panel { @apply rounded-2xl border border-[#d9dee4] bg-white shadow-[0_14px_38px_rgba(28,43,56,0.06)]; }
+  .eyebrow { @apply text-[10px] font-bold uppercase tracking-[0.16em] text-[#71808d]; }
+  .field-label { @apply mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#4d6170]; }
 }
+
+/* ERAYA visual tokens: keep existing component structure while moving the
+   shared interface away from the original green-heavy palette. */
+[class~="bg-[#f7f8f4]"] { background-color: #f3f5f8 !important; }
+[class~="bg-[#fbfcfa]"] { background-color: #f8fafc !important; }
+[class~="bg-[#173c32]"] { background-color: #16283a !important; }
+[class~="bg-[#245445]"] { background-color: #263f5b !important; }
+[class~="bg-[#41623f]"] { background-color: #5268ae !important; }
+[class~="bg-[#355022]"] { background-color: #354875 !important; }
+[class~="bg-[#4f7630]"] { background-color: #5268ae !important; }
+[class~="bg-[#f2f8e3]"] { background-color: #eef2f8 !important; }
+[class~="bg-[#edf5e8]"] { background-color: #edf1f8 !important; }
+[class~="bg-[#f7faf4]"] { background-color: #f4f6fa !important; }
+[class~="bg-[#e4cfaa]"] { background-color: #dce5f2 !important; }
+[class~="text-[#d5ed78]"] { color: #e4b76a !important; }
+[class~="text-[#173c32]"] { color: #16283a !important; }
+[class~="text-[#245445]"] { color: #263f5b !important; }
+[class~="text-[#41623f]"] { color: #5268ae !important; }
+[class~="text-[#355022]"] { color: #354875 !important; }
+[class~="text-[#4f7630]"] { color: #5268ae !important; }
+[class~="text-[#547224]"] { color: #5268ae !important; }
+[class~="border-[#dfe6df]"] { border-color: #d9dee4 !important; }
+[class~="border-[#edf0eb]"] { border-color: #e3e7ed !important; }
+[class~="border-[#cad8c9]"] { border-color: #c6d0dd !important; }

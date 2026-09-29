@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Link,
   NavLink,
@@ -405,6 +405,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="*" element={<Shell />} />
     </Routes>
   );
@@ -896,10 +897,23 @@ function CampaignSwitcher() {
 }
 
 
+function getSavedProfilePhoto(): string {
+  try {
+    const stored = localStorage.getItem('campaignmind:profile');
+    const profile = stored ? JSON.parse(stored) as { photo?: string } : null;
+    return profile?.photo ?? '';
+  } catch {
+    return '';
+  }
+}
+
+
 function Shell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const authUser = getAuthUser();
+  const [profilePhoto, setProfilePhoto] = useState(() => getSavedProfilePhoto());
 
   const [profileName, setProfileName] = useState(() => {
     try {
@@ -936,6 +950,7 @@ function Shell() {
               authUser?.name ||
               'User'
           );
+          setProfilePhoto(profile?.photo || '');
 
           return;
         }
@@ -944,6 +959,7 @@ function Shell() {
       }
 
       setProfileName(authUser?.name || 'User');
+      setProfilePhoto('');
     };
 
     window.addEventListener(
@@ -974,37 +990,25 @@ function Shell() {
   };
 
   const currentPage =
-    pageNames[location.pathname] ?? 'CampaignMind';
+    pageNames[location.pathname] ?? 'ERAYA';
 
   function handleLogout() {
     logout();
-    window.location.href = '/login';
+    navigate('/login', { replace: true });
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f4]">
+    <div className="min-h-screen bg-[#f4f5f7]">
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-[252px] border-r border-[#e3e8e2] bg-[#f1f4ee] px-5 py-6 transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-30 w-[252px] border-r border-[#d9dee4] bg-[#edf0f3] px-5 py-6 transition-transform lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
 
-        {/* LOGO */}
-        <div className="mb-10 flex items-center gap-3 px-2">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#173c32] text-lg text-[#d5ed78]">
-            ✦
-          </div>
-
-          <span className="font-display text-lg font-semibold tracking-[-0.04em] text-[#173c32]">
-            CampaignMind
-          </span>
-        </div>
-
-
         {/* MAIN NAVIGATION */}
-        <p className="eyebrow mb-3 px-2">
+        <p className="eyebrow mb-3 px-2 pt-2">
           Workspace
         </p>
 
@@ -1018,8 +1022,8 @@ function Shell() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
                   isActive
-                    ? 'bg-white font-semibold text-[#173c32] shadow-sm'
-                    : 'text-[#68766e] hover:bg-white/70 hover:text-[#173c32]'
+                    ? 'bg-white font-semibold text-[#20394b] shadow-sm'
+                    : 'text-[#687785] hover:bg-white/70 hover:text-[#20394b]'
                 }`
               }
             >
@@ -1045,8 +1049,8 @@ function Shell() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
                 isActive
-                  ? 'bg-white font-semibold text-[#173c32] shadow-sm'
-                  : 'text-[#68766e] hover:bg-white/70 hover:text-[#173c32]'
+                ? 'bg-white font-semibold text-[#20394b] shadow-sm'
+                : 'text-[#687785] hover:bg-white/70 hover:text-[#20394b]'
               }`
             }
           >
@@ -1059,7 +1063,7 @@ function Shell() {
 
           <button
             onClick={handleLogout}
-            className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-[#68766e] transition hover:bg-white/70 hover:text-[#173c32]"
+            className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-[#687785] transition hover:bg-white/70 hover:text-[#20394b]"
           >
             <span className="w-4 text-center">
               ↪
@@ -1087,17 +1091,20 @@ function Shell() {
       <main className="min-h-screen lg:pl-[252px] pt-[72px]">
 
         {/* HEADER */}
-        <header className="fixed left-0 right-0 top-0 z-40 flex h-[72px] items-center justify-between border-b border-[#e3e8e2] bg-[#f7f8f4]/95 px-5 backdrop-blur md:px-10 lg:pl-[272px]">
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-[72px] items-center justify-between border-b border-[#d9dee4] bg-[#f4f5f7]/95 px-6 backdrop-blur md:px-8">
 
-          <button
-            aria-label="Open navigation"
-            className="text-xl text-[#173c32] lg:hidden"
-            onClick={() => setMobileOpen(true)}
-          >
-            ☰
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Open navigation"
+              className="text-xl text-[#20394b] lg:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              ☰
+            </button>
+            <img src="/assets/eraya-logo.png" alt="ERAYA" className="h-14 w-14 object-contain sm:h-16 sm:w-16" />
+          </div>
 
-          <div className="hidden text-xs text-[#819087] md:block">
+          <div className="ml-4 hidden text-xs text-[#819087] md:block">
             Workspace /{' '}
             <span className="text-[#263d34]">
               {currentPage}
@@ -1116,20 +1123,24 @@ function Shell() {
                 {profileName}
               </p>
 
-              <p className="text-[10px] text-[#8a968f]">
+              <p className="text-[10px] text-[#7e8b96]">
                 Brand workspace
               </p>
             </div>
 
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#e4cfaa] text-xs font-bold text-[#5b4227]">
-              {profileName
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((part: string) => part[0]?.toUpperCase())
-                .join('') || 'U'}
-            </div>
+            {profilePhoto ? (
+              <img src={profilePhoto} alt="Profile" className="h-9 w-9 rounded-full object-cover ring-2 ring-white" />
+            ) : (
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-[#dce5f2] text-xs font-bold text-[#304e78]">
+                {profileName
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part: string) => part[0]?.toUpperCase())
+                  .join('') || 'U'}
+              </div>
+            )}
 
           </Link>
 
@@ -1212,23 +1223,32 @@ function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError('');
 
-    if (!email || !password) {
-      setError('Enter your email and password.');
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Enter a valid email address.');
       return;
     }
 
-    const success = login(email, password);
+    if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+
+    setLoading(true);
+    const success = await login(email.trim(), password);
 
     if (!success) {
       setError(
         'No matching account found. Please check your details or create an account.'
       );
+      setLoading(false);
       return;
     }
 
@@ -1243,13 +1263,7 @@ function Login() {
 
           <div className="mb-8 text-center">
 
-            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-[#173c32] text-xl text-[#d5ed78]">
-              ✦
-            </div>
-
-            <p className="eyebrow mb-3">
-              Campaign intelligence
-            </p>
+            <img src="/assets/eraya-logo.png" alt="ERAYA" className="relative top-4 mx-auto mb-10 h-48 w-48 object-contain" />
 
             <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-[#173c32]">
               Welcome back.
@@ -1290,12 +1304,15 @@ function Login() {
                 </label>
 
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
                   className="w-full rounded-xl border border-[#dfe6df] bg-[#fbfcfa] px-3.5 py-3 text-sm text-[#29463b] outline-none transition placeholder:text-[#a1aca5] focus:border-[#759c73] focus:ring-2 focus:ring-[#dcebc2]"
                 />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} className="mt-2 text-xs font-semibold text-[#41623f] hover:text-[#173c32]">
+                  {showPassword ? 'Hide password' : 'Show password'}
+                </button>
               </div>
 
             </div>
@@ -1311,11 +1328,18 @@ function Login() {
             )}
 
 
+            <div className="mt-5 flex items-center justify-between">
+              <button type="button" onClick={() => navigate('/forgot-password')} className="text-xs font-semibold text-[#41623f] hover:text-[#173c32]">
+                Forgot password?
+              </button>
+            </div>
+
             <button
               type="submit"
-              className="mt-6 w-full rounded-xl bg-[#173c32] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245445]"
+              disabled={loading}
+              className="mt-5 w-full rounded-xl bg-[#173c32] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245445] disabled:cursor-wait disabled:opacity-70"
             >
-              Sign in
+              {loading ? 'Signing in…' : 'Sign in'}
               <span className="ml-2 text-[#d5ed78]">
                 ↗
               </span>
@@ -1342,7 +1366,7 @@ function Login() {
 
 
           <p className="mt-6 text-center text-[10px] leading-4 text-[#9aa59f]">
-            CampaignMind · Influencer campaign intelligence
+            ERAYA · Influencer campaign platform
           </p>
 
         </div>
@@ -1365,14 +1389,22 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError('');
 
-    if (!name || !company || !email || !password) {
+    if (!name.trim() || !company.trim() || !email.trim() || !password) {
       setError('Complete all required fields.');
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Enter a valid email address.');
       return;
     }
 
@@ -1386,11 +1418,12 @@ function Signup() {
       return;
     }
 
-    signup(
+    setLoading(true);
+    await signup(
       {
-        name,
-        email,
-        company,
+        name: name.trim(),
+        email: email.trim(),
+        company: company.trim(),
       },
       password
     );
@@ -1406,9 +1439,7 @@ function Signup() {
 
           <div className="mb-8 text-center">
 
-            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-[#173c32] text-xl text-[#d5ed78]">
-              ✦
-            </div>
+            <img src="/assets/eraya-logo.png" alt="ERAYA" className="mx-auto mb-5 h-32 w-32 object-contain" />
 
             <p className="eyebrow mb-3">
               Brand workspace
@@ -1419,7 +1450,7 @@ function Signup() {
             </h1>
 
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#78857e]">
-              Start building smarter influencer campaigns with CampaignMind.
+              Build a clearer, more consistent influencer campaign workflow with ERAYA.
             </p>
 
           </div>
@@ -1484,12 +1515,15 @@ function Signup() {
                 </label>
 
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="At least 6 characters"
                   className="w-full rounded-xl border border-[#dfe6df] bg-[#fbfcfa] px-3.5 py-3 text-sm text-[#29463b] outline-none transition placeholder:text-[#a1aca5] focus:border-[#759c73] focus:ring-2 focus:ring-[#dcebc2]"
                 />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} className="mt-2 text-xs font-semibold text-[#41623f] hover:text-[#173c32]">
+                  {showPassword ? 'Hide password' : 'Show password'}
+                </button>
 
               </div>
 
@@ -1501,12 +1535,15 @@ function Signup() {
                 </label>
 
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Repeat password"
                   className="w-full rounded-xl border border-[#dfe6df] bg-[#fbfcfa] px-3.5 py-3 text-sm text-[#29463b] outline-none transition placeholder:text-[#a1aca5] focus:border-[#759c73] focus:ring-2 focus:ring-[#dcebc2]"
                 />
+                <button type="button" onClick={() => setShowConfirmPassword((value) => !value)} className="mt-2 text-xs font-semibold text-[#41623f] hover:text-[#173c32]">
+                  {showConfirmPassword ? 'Hide password' : 'Show password'}
+                </button>
 
               </div>
 
@@ -1525,9 +1562,10 @@ function Signup() {
 
             <button
               type="submit"
-              className="mt-6 w-full rounded-xl bg-[#173c32] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245445]"
+              disabled={loading}
+              className="mt-6 w-full rounded-xl bg-[#173c32] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245445] disabled:cursor-wait disabled:opacity-70"
             >
-              Create brand account
+              {loading ? 'Creating account…' : 'Create brand account'}
               <span className="ml-2 text-[#d5ed78]">
                 ↗
               </span>
@@ -1554,11 +1592,80 @@ function Signup() {
 
 
           <p className="mt-6 text-center text-[10px] leading-4 text-[#9aa59f]">
-            CampaignMind · Influencer campaign intelligence
+            ERAYA · Influencer campaign platform
           </p>
 
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+function presentFrontendError(message: string): string {
+  return message.replace(/CampaignMind/gi, 'ERAYA');
+}
+
+
+/* =========================================================
+   FORGOT PASSWORD
+========================================================= */
+
+function ForgotPassword() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setError('');
+
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    // The current frontend-only auth has no reset endpoint. Keep this flow
+    // ready for a real reset API without pretending an email was sent.
+    await new Promise((resolve) => window.setTimeout(resolve, 450));
+    setSubmitted(true);
+    setLoading(false);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f7f8f4] px-5 py-10 md:px-10">
+      <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-md items-center">
+        <div className="w-full">
+          <div className="mb-8 text-center">
+            <img src="/assets/eraya-logo.png" alt="ERAYA" className="mx-auto mb-5 h-32 w-32 object-contain" />
+            <p className="eyebrow mb-3">ERAYA</p>
+            <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-[#173c32]">Forgot your password?</h1>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#78857e]">Enter your email and we'll help you reset your password.</p>
+          </div>
+
+          <form onSubmit={submit} className="panel p-6 md:p-8">
+            {submitted ? (
+              <div role="status" className="rounded-xl border border-[#d8e6c1] bg-[#f2f8e3] p-5">
+                <p className="font-semibold text-[#29463b]">Check your email</p>
+                <p className="mt-2 text-sm leading-6 text-[#6f7d75]">If an account exists for this email, password reset instructions have been sent.</p>
+              </div>
+            ) : (
+              <>
+                <label className="field-label" htmlFor="reset-email">Email</label>
+                <input id="reset-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" className="w-full rounded-xl border border-[#dfe6df] bg-[#fbfcfa] px-3.5 py-3 text-sm text-[#29463b] outline-none transition placeholder:text-[#a1aca5] focus:border-[#759c73] focus:ring-2 focus:ring-[#dcebc2]" />
+                {error && <p role="alert" className="mt-3 text-sm text-[#a34d4d]">{error}</p>}
+                <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-[#173c32] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245445] disabled:cursor-wait disabled:opacity-70">
+                  {loading ? 'Sending…' : 'Send reset link'}
+                </button>
+              </>
+            )}
+            <button type="button" onClick={() => navigate('/login')} className="mt-6 w-full text-center text-sm font-semibold text-[#41623f] hover:text-[#173c32]">Back to sign in</button>
+          </form>
+          <p className="mt-6 text-center text-[10px] leading-4 text-[#9aa59f]">ERAYA · Influencer campaign platform</p>
+        </div>
       </div>
     </div>
   );
@@ -1713,11 +1820,7 @@ function Dashboard() {
       return 'Good afternoon';
     }
 
-    if (hour >= 17 && hour < 21) {
-      return 'Good evening';
-    }
-
-    return 'Good night';
+    return 'Good evening';
   };
 
   const formatMetric = (value: number) => {
@@ -1852,7 +1955,7 @@ function Dashboard() {
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <p className="eyebrow mb-3">
-            Campaign intelligence
+            ERAYA
           </p>
 
           <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-[#173c32] md:text-4xl">
@@ -2484,7 +2587,7 @@ function Campaign() {
 
       setError(
         cause instanceof N8nApiError
-          ? cause.message
+          ? presentFrontendError(cause.message)
           : 'Campaign search could not be completed.'
       );
 
@@ -2505,7 +2608,7 @@ function Campaign() {
 
         <div>
           <p className="eyebrow mb-3">
-            Campaign intelligence
+            ERAYA
           </p>
 
           <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-[#173c32] md:text-4xl">
@@ -2513,7 +2616,7 @@ function Campaign() {
           </h1>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#78857e]">
-            Tell CampaignMind what your brand needs. The AI will analyze your
+            Tell ERAYA what your brand needs. The platform will analyze your
             requirements and suggest influencers who fit your campaign.
           </p>
         </div>
@@ -2572,7 +2675,7 @@ function Campaign() {
       {/* CAMPAIGN FORM */}
       <form
         onSubmit={submit}
-        className="grid gap-6 xl:grid-cols-[1fr_330px]"
+        className="grid gap-6"
       >
 
         <section className="panel p-6 md:p-8">
@@ -2596,7 +2699,6 @@ function Campaign() {
             </div>
 
           </div>
-
 
           <div className="grid gap-5 md:grid-cols-2">
 
@@ -2751,7 +2853,7 @@ function Campaign() {
           <div className="mt-8 flex flex-col justify-between gap-4 border-t border-[#edf0eb] pt-6 sm:flex-row sm:items-center">
 
             <p className="text-xs text-[#89958e]">
-              CampaignMind will analyze your brief before recommending creators.
+              ERAYA will analyze your brief before recommending creators.
             </p>
 
             <button
@@ -2766,76 +2868,6 @@ function Campaign() {
           </div>
 
         </section>
-
-
-        {/* WHAT HAPPENS */}
-        <aside className="space-y-4">
-
-          <div className="rounded-2xl border border-[#d8e6c1] bg-[#f2f8e3] p-6">
-
-            <div className="mb-6 flex items-center gap-3">
-
-              <span className="text-xl text-[#6f943b]">
-                ✦
-              </span>
-
-              <p className="font-display font-semibold text-[#355022]">
-                How CampaignMind works
-              </p>
-
-            </div>
-
-
-            <div className="space-y-5">
-
-              {[
-                'Understand your campaign',
-                'Find suitable creators',
-                'Analyze previous campaign learning',
-                'Rank the best matches',
-              ].map((label, index) => (
-
-                <div
-                  className="flex gap-3"
-                  key={label}
-                >
-
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white text-[10px] font-bold text-[#6f943b]">
-                    0{index + 1}
-                  </span>
-
-                  <p className="pt-1 text-xs leading-5 text-[#5d7547]">
-                    {label}
-                  </p>
-
-                </div>
-
-              ))}
-
-            </div>
-
-          </div>
-
-
-          <div className="rounded-2xl border border-[#e1e7e1] bg-white p-5">
-
-            <p className="eyebrow mb-2">
-              AI matching
-            </p>
-
-            <p className="text-sm font-semibold text-[#29463b]">
-              Recommendations are based on your campaign requirements.
-            </p>
-
-            <p className="mt-2 text-xs leading-5 text-[#89958e]">
-              Later, campaign engagement and sales results can be used to
-              improve future recommendations.
-            </p>
-
-          </div>
-
-        </aside>
-
       </form>
 
 
@@ -3087,7 +3119,7 @@ function RecommendationResults({
           </p>
 
           <h2 className="font-display text-xl font-semibold text-[#173c32]">
-            CampaignMind response
+            ERAYA response
           </h2>
 
 
@@ -3308,7 +3340,7 @@ function CreatorCard({
     } catch (error) {
       const message =
         error instanceof N8nApiError
-          ? error.message
+          ? presentFrontendError(error.message)
           : 'Contact search failed.';
 
       setContactError(message);
@@ -3504,7 +3536,7 @@ function CreatorCard({
             </p>
 
             <p className="mt-3 text-xs leading-5 text-[#6f7d75]">
-              Find a public business email before outreach. CampaignMind will not invent a contact.
+              Find a public business email before outreach. ERAYA will not invent a contact.
             </p>
 
             <button
@@ -3623,7 +3655,7 @@ function CreatorCard({
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-[#89958e]">
-                  CampaignMind does not automatically interpret the reply.
+                      ERAYA does not automatically interpret the reply.
                   Review the email yourself and record your assessment.
                 </p>
               </div>
@@ -3870,7 +3902,7 @@ function CreatorCard({
                 } catch (error) {
                   setOutreachError(
                     error instanceof Error
-                      ? `Email failed to send. ${error.message}`
+                      ? `Email failed to send. ${presentFrontendError(error.message)}`
                       : 'Email failed to send'
                   );
                 } finally {
@@ -4091,7 +4123,7 @@ function Outreach() {
             </p>
 
             <p className="mt-1 text-sm leading-6 text-[#6f7d75]">
-              Check the influencer's actual email yourself. CampaignMind
+              Check the influencer's actual email yourself. ERAYA
               does not automatically interpret, summarize, or invent the
               influencer's response.
             </p>
@@ -5166,6 +5198,7 @@ function Profile() {
     company: string;
     email: string;
     location: string;
+    photo: string;
   };
 
   const defaultProfile: ProfileData = {
@@ -5173,6 +5206,7 @@ function Profile() {
     company: 'Your Brand',
     email: 'aanya@brand.com',
     location: 'Hyderabad',
+    photo: '',
   };
 
   const [profile, setProfile] = useState<ProfileData>(() => {
@@ -5193,6 +5227,9 @@ function Profile() {
   });
 
   const [saved, setSaved] = useState(false);
+  const [photoSaved, setPhotoSaved] = useState(false);
+  const [photoDirty, setPhotoDirty] = useState(false);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
 
   const updateProfile = (
     field: keyof ProfileData,
@@ -5206,6 +5243,42 @@ function Profile() {
     setSaved(false);
   };
 
+  const chooseProfilePhoto = (file: File | null) => {
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setSaved(false);
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setSaved(false);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const photo = typeof reader.result === 'string' ? reader.result : '';
+      if (!photo) return;
+
+      setProfile((current) => ({ ...current, photo }));
+      setSaved(false);
+      setPhotoSaved(false);
+      setPhotoDirty(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeProfilePhoto = () => {
+    setProfile((current) => ({ ...current, photo: '' }));
+    setSaved(false);
+    setPhotoSaved(false);
+    setPhotoDirty(true);
+    if (profilePhotoInputRef.current) {
+      profilePhotoInputRef.current.value = '';
+    }
+  };
+
   const saveProfile = () => {
     localStorage.setItem(
       'campaignmind:profile',
@@ -5217,6 +5290,8 @@ function Profile() {
     );
 
     setSaved(true);
+    setPhotoSaved(photoDirty);
+    setPhotoDirty(false);
   };
 
   const resetProfile = () => {
@@ -5228,6 +5303,8 @@ function Profile() {
     );
 
     setSaved(true);
+    setPhotoSaved(false);
+    setPhotoDirty(false);
   };
 
   const initials =
@@ -5244,30 +5321,52 @@ function Profile() {
       <PageHeader
         eyebrow="Workspace settings"
         title="Profile"
-        description="Manage the brand information used across your CampaignMind workspace."
+        description="Manage the brand information used across your ERAYA workspace."
       />
 
-      <section className="panel max-w-3xl p-6 md:p-8">
+      <section className="panel max-w-4xl p-6 md:p-8">
 
         {/* PROFILE HEADER */}
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="mb-8 flex flex-col gap-5 border-b border-[#d9dee4] pb-8 sm:flex-row sm:items-center">
 
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-[#e4cfaa] text-xl font-bold text-[#5b4227]">
-            {initials}
+          <div className="relative shrink-0">
+            <input
+              ref={profilePhotoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(event) => chooseProfilePhoto(event.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              aria-label="Change profile photo"
+              onClick={() => profilePhotoInputRef.current?.click()}
+              className="group relative grid h-24 w-24 overflow-hidden rounded-full bg-[#dce5f2] text-2xl font-bold text-[#304e78] ring-4 ring-[#eef2f7]"
+            >
+              {profile.photo ? (
+                <img src={profile.photo} alt="Profile" className="h-full w-full object-cover" />
+              ) : initials}
+              <span className="absolute inset-0 grid place-items-center bg-[#16283a]/75 px-2 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-white opacity-0 transition group-hover:opacity-100">Change photo</span>
+            </button>
           </div>
 
           <div>
-            <p className="eyebrow text-[#6f943b]">
+            <p className="eyebrow text-[#6578b8]">
               Brand workspace
             </p>
 
-            <h2 className="mt-1 font-display text-2xl font-semibold text-[#173c32]">
+            <h2 className="mt-1 font-display text-2xl font-semibold text-[#16283a]">
               {profile.name || 'Your name'}
             </h2>
 
-            <p className="mt-1 text-sm text-[#89958e]">
+            <p className="mt-1 text-sm text-[#758292]">
               {profile.company || 'Your company'}
             </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => profilePhotoInputRef.current?.click()} className="text-xs font-semibold text-[#5268ae] hover:text-[#30467f]">Change photo</button>
+              {profile.photo && <button type="button" onClick={removeProfilePhoto} className="text-xs font-semibold text-[#995757] hover:text-[#753f3f]">Remove photo</button>}
+            </div>
           </div>
 
         </div>
@@ -5373,8 +5472,8 @@ function Profile() {
           </button>
 
           {saved && (
-            <span className="text-xs font-semibold text-[#547224]">
-              ✓ Profile saved
+            <span className="text-xs font-semibold text-[#5268ae]">
+              ✓ {photoSaved ? 'Profile photo updated' : 'Changes saved'}
             </span>
           )}
 

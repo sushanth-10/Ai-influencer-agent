@@ -6,7 +6,16 @@ export interface AuthUser {
 
 const AUTH_KEY = 'campaignmind:auth';
 const USER_KEY = 'campaignmind:user';
-const PASSWORD_KEY = 'campaignmind:password';
+const PASSWORD_HASH_KEY = 'campaignmind:password-hash';
+const LEGACY_PASSWORD_KEY = 'campaignmind:password';
+
+async function hashPassword(password: string): Promise<string> {
+  const encoded = new TextEncoder().encode(password);
+  const digest = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
 
 export function getAuthUser(): AuthUser | null {
   const authenticated = localStorage.getItem(AUTH_KEY);
@@ -28,37 +37,40 @@ export function getAuthUser(): AuthUser | null {
   }
 }
 
-export function signup(
+export async function signup(
   user: AuthUser,
   password: string
-): void {
+): Promise<void> {
   localStorage.setItem(AUTH_KEY, 'true');
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-
-  // Demo-only authentication.
-  // Replace with backend authentication before production.
-  localStorage.setItem(PASSWORD_KEY, password);
+  localStorage.setItem(PASSWORD_HASH_KEY, await hashPassword(password));
 }
 
-export function login(
+export async function login(
   email: string,
   password: string
-): boolean {
+): Promise<boolean> {
   const storedUser = localStorage.getItem(USER_KEY);
-  const storedPassword = localStorage.getItem(PASSWORD_KEY);
+  const storedPasswordHash = localStorage.getItem(PASSWORD_HASH_KEY);
+  const legacyPassword = localStorage.getItem(LEGACY_PASSWORD_KEY);
 
-  if (!storedUser || !storedPassword) {
+  if (!storedUser || (!storedPasswordHash && !legacyPassword)) {
     return false;
   }
 
   try {
     const user = JSON.parse(storedUser) as AuthUser;
 
-    if (
-      user.email.toLowerCase() === email.toLowerCase() &&
-      storedPassword === password
-    ) {
+    const passwordMatches = storedPasswordHash
+      ? storedPasswordHash === (await hashPassword(password))
+      : legacyPassword === password;
+
+    if (user.email.toLowerCase() === email.toLowerCase() && passwordMatches) {
       localStorage.setItem(AUTH_KEY, 'true');
+      if (!storedPasswordHash) {
+        localStorage.setItem(PASSWORD_HASH_KEY, await hashPassword(password));
+        localStorage.removeItem(LEGACY_PASSWORD_KEY);
+      }
       return true;
     }
   } catch {

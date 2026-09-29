@@ -110,7 +110,7 @@ export default function ChatBot() {
     } catch (cause) {
       setError(
         cause instanceof Error
-          ? cause.message
+          ? cause.message.replace(/CampaignMind/gi, 'ERAYA')
           : 'The assistant could not respond right now.'
       );
     } finally {
@@ -129,16 +129,14 @@ export default function ChatBot() {
     <>
       {open && (
         <section
-          aria-label="CampaignMind AI assistant"
+          aria-label="ERAYA assistant"
           className="fixed bottom-24 right-5 z-[70] flex h-[min(680px,calc(100vh-120px))] w-[min(410px,calc(100vw-24px))] flex-col overflow-hidden rounded-3xl border border-[#dce6d9] bg-[#fbfcfa] shadow-[0_24px_70px_rgba(23,60,50,0.22)]"
         >
           <header className="flex items-center justify-between bg-[#173c32] px-5 py-4 text-white">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#d5ed78] text-lg text-[#173c32]">
-                ✦
-              </div>
+              <img src="/assets/eraya-logo.png" alt="ERAYA" className="h-10 w-10 rounded-2xl object-cover" />
               <div>
-                <p className="text-sm font-bold">CampaignMind AI</p>
+                <p className="text-sm font-bold">ERAYA assistant</p>
                 <p className="text-[11px] text-white/65">
                   Memory-aware campaign assistant
                 </p>
@@ -168,14 +166,11 @@ export default function ChatBot() {
             {messages.length === 0 ? (
               <div className="flex min-h-full flex-col justify-center">
                 <div className="mx-auto max-w-[310px] text-center">
-                  <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#edf4e7] text-2xl text-[#4f7630]">
-                    ✦
-                  </div>
                   <h3 className="font-display text-lg font-semibold text-[#173c32]">
                     Ask your campaign copilot
                   </h3>
                   <p className="mt-2 text-xs leading-5 text-[#75827b]">
-                    Ask about creators, campaign strategy, or what CampaignMind
+                    Ask about creators, campaign strategy, or what ERAYA
                     has learned from previous campaigns.
                   </p>
 
@@ -283,7 +278,7 @@ export default function ChatBot() {
                   }
                 }}
                 rows={1}
-                placeholder="Ask CampaignMind anything…"
+                placeholder="Ask ERAYA anything…"
                 className="max-h-28 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-[#29463b] outline-none placeholder:text-[#9aa59f]"
               />
               <button
@@ -305,10 +300,10 @@ export default function ChatBot() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        aria-label={open ? 'Close CampaignMind AI' : 'Open CampaignMind AI'}
+        aria-label={open ? 'Close ERAYA assistant' : 'Open ERAYA assistant'}
         className="fixed bottom-5 right-5 z-[71] grid h-14 w-14 place-items-center rounded-full bg-[#173c32] text-xl text-[#d5ed78] shadow-[0_12px_30px_rgba(23,60,50,0.25)] transition hover:-translate-y-0.5 hover:bg-[#245646]"
       >
-        {open ? '×' : '✦'}
+        {open ? '×' : <img src="/assets/eraya-logo.png" alt="ERAYA" className="h-10 w-10 rounded-full object-cover" />}
       </button>
     </>
   );
